@@ -1,1 +1,23 @@
-# working on it
+import pygame
+from sys import exit
+from maze import draw_smooth_map
+
+
+clock = pygame.time.Clock()
+
+while True:
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            exit()
+    
+    # Drawing
+    # The smooth map function handles the background clear
+    draw_smooth_map()
+    
+    # Update the display
+    pygame.display.update()
+    
+    # Limit frame rate
+    clock.tick(60)
