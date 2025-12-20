@@ -2,11 +2,12 @@ import pygame
 from sys import exit
 from maze import draw_smooth_map
 
+# Most important thing ***
 pygame.init()
 
 
 clock = pygame.time.Clock()
-pygame.init()
+
 while True:
     # Event handling
     for event in pygame.event.get():
