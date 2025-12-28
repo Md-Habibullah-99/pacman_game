@@ -9,7 +9,9 @@ class Pacman:
         self.start_pos = self.find_start_position()
         self.reset_position()
         
-        self.pallet_count = 0;
+        # Pallet count variable
+        self.pallet_count = 0
+
         # Movement speed (constant 2 as requested)
         self.speed = 2
         
