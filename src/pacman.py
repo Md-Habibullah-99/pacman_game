@@ -2,12 +2,11 @@ import pygame
 import time
 import math
 from maze import MAP_DATA, TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, screen
-font = pygame.font.Font("fonts/CascadiaCode-VariableFont_wght.ttf")
 
-try:
-    text_surface = font.render("My game" , False, "Green")
-except :
-    print("something went wrong!")
+# Defer font/text creation until pygame font is initialized
+font = None
+text_surface = None
+text_rect = None
 
 class Pacman:
     def __init__(self):
@@ -146,8 +145,7 @@ class Pacman:
                         self.pallet_count += 10
                     else :
                         self.pallet_count += 50
-                    screen.blit(text_surface)
-                    print(self.pallet_count)
+                    # screen.blit()
             
             # Try to change to queued direction if it's valid
             if self.can_move_in_direction(self.next_dx, self.next_dy):
@@ -222,7 +220,18 @@ class Pacman:
                 self.px = TILE_SIZE // 2
 
     def draw(self):
-        """Draw Pacman with wide mouth"""
+        """Draw Pacman and title text in the top tile"""
+        # Lazily create the title text once pygame font is ready
+        global font, text_surface, text_rect
+        if text_surface is None:
+            try:
+                if not pygame.font.get_init():
+                    pygame.font.init()
+                font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 22)
+                text_surface = font.render("My game", True, (0, 255, 0))
+                text_rect = text_surface.get_rect(center=(TILE_SIZE // 2, TILE_SIZE // 2))
+            except Exception as e:
+                print("Font init/render failed:", e)
         # Calculate mouth opening
         if self.dx == 0 and self.dy == 0:
             # Closed mouth when stationary
@@ -230,7 +239,10 @@ class Pacman:
         else:
             # Animated mouth (0-60 degrees)
             mouth_angle = 30 + 30 * math.sin(self.mouth_phase)
-        
+
+        center_x = int(self.px)
+        center_y = int(self.py)
+
         # Determine direction for mouth
         if self.dx == 1:  # Right
             direction_angle = 0
@@ -242,42 +254,40 @@ class Pacman:
             direction_angle = 270
         else:
             # Stationary - draw full circle
-            pygame.draw.circle(screen, (255, 255, 0), 
-                             (int(self.px), int(self.py)), 
-                             self.radius)
+            pygame.draw.circle(screen, (255, 255, 0), (center_x, center_y), self.radius)
+            # Also render the text in the top-left tile
+            if text_surface and text_rect:
+                screen.blit(text_surface, text_rect)
             return
-        
+
         # Draw Pacman as a filled arc (pie slice)
-        center_x = int(self.px)
-        center_y = int(self.py)
-        
-        # Create Pacman as a polygon for better control
         points = []
         num_points = 30
-        
+
         # Start at center
         points.append((center_x, center_y))
-        
+
         # Calculate the large arc (the Pacman body, not the mouth)
-        # The mouth opens at 'direction_angle', so the body goes from
-        # direction_angle + mouth_angle/2 to direction_angle - mouth_angle/2 + 360
-        
         start_angle = direction_angle + mouth_angle / 2
         end_angle = direction_angle - mouth_angle / 2 + 360
-        
+
         # Convert to radians
         start_rad = math.radians(start_angle)
         end_rad = math.radians(end_angle)
-        
+
         # Generate points along the arc
         for i in range(num_points + 1):
             t = i / num_points
             angle = start_rad + (end_rad - start_rad) * t
-            
+
             x = center_x + self.radius * math.cos(angle)
             y = center_y - self.radius * math.sin(angle)  # Negative because pygame y increases downward
-            
+
             points.append((x, y))
-        
+
         # Draw the filled polygon
         pygame.draw.polygon(screen, (255, 255, 0), points)
+
+        # Also render the text in the top-left tile each frame
+        if text_surface and text_rect:
+            screen.blit(text_surface, text_rect)
