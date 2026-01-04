@@ -195,6 +195,9 @@ class Ghost:
             spawn = random.choice(spawn_tiles)
         self.spawn_tile = spawn
 
+        # Build a return graph that includes the spawn tile as a node
+        self.nodes_return, self.adj_return = self._build_return_graph()
+
         self.px = spawn[0] * TILE_SIZE + TILE_SIZE // 2
         self.py = spawn[1] * TILE_SIZE + TILE_SIZE // 2
 
@@ -204,6 +207,8 @@ class Ghost:
         # Path state: list of node tiles; we move from one to next
         self.current_target_node = None
         self.path_nodes = []
+        # Track last safe walkable tile to recover from overshoot
+        self.last_safe_tile = self.spawn_tile
         # If spawn tile is not a node, plan an initial step toward nearest node
         self._plan_move_from_non_node()
 
@@ -235,6 +240,7 @@ class Ghost:
         self.speed = self.normal_speed
         self.scatter_active = False
         self._plan_move_from_non_node()
+        self.last_safe_tile = self.spawn_tile
 
     def current_tile(self):
         return int(self.px // TILE_SIZE), int(self.py // TILE_SIZE)
@@ -289,6 +295,72 @@ class Ghost:
             if next_step is not None:
                 self.choose_next_direction_to(next_step)
 
+    def _next_tile_towards(self, start_tile, target_tile):
+        """BFS over walkable tiles; return immediate next step toward target."""
+        sx, sy = start_tile
+        tx, ty = target_tile
+        if (sx, sy) == (tx, ty):
+            return None
+        from collections import deque
+        dq = deque()
+        dq.append((sx, sy))
+        parent = { (sx, sy): None }
+        seen = { (sx, sy) }
+        while dq:
+            x, y = dq.popleft()
+            for nx, ny in neighbors_with_tunnel(x, y):
+                if (nx, ny) in seen:
+                    continue
+                parent[(nx, ny)] = (x, y)
+                if (nx, ny) == (tx, ty):
+                    # reconstruct path and return first step
+                    path = [(nx, ny)]
+                    cur = (nx, ny)
+                    while parent[cur] is not None:
+                        cur = parent[cur]
+                        path.append(cur)
+                    path.reverse()
+                    if len(path) >= 2:
+                        return path[1]
+                    return None
+                seen.add((nx, ny))
+                dq.append((nx, ny))
+        return None
+
+    def _build_return_graph(self):
+        # Copy base nodes/adj and insert spawn tile as an explicit node with edges
+        nodes = set(self.nodes)
+        adj = {u: list(vs) for u, vs in self.adj.items()}
+        nodes.add(self.spawn_tile)
+
+        def raycast_from(x, y, dx, dy):
+            cx, cy = x, y
+            dist = 0
+            while True:
+                nx, ny = cx + dx, cy + dy
+                if ny == 9 and (nx < 0 or nx >= MAP_WIDTH):
+                    if nx < 0:
+                        nx = MAP_WIDTH - 1
+                    elif nx >= MAP_WIDTH:
+                        nx = 0
+                if not is_walkable(nx, ny):
+                    return None
+                dist += 1
+                cx, cy = nx, ny
+                if (cx, cy) in nodes:
+                    return (cx, cy, dist)
+
+        adj.setdefault(self.spawn_tile, [])
+        for dx, dy in [(1, 0), (-1, 0), (0, 1), (0, -1)]:
+            hit = raycast_from(self.spawn_tile[0], self.spawn_tile[1], dx, dy)
+            if hit is not None:
+                nx, ny, w = hit
+                if (nx, ny) in nodes:
+                    adj[self.spawn_tile].append(((nx, ny), w))
+                    adj.setdefault((nx, ny), []).append((self.spawn_tile, w))
+
+        return nodes, adj
+
     def handle_tunnel(self):
         tx, ty = self.current_tile()
         if ty != 9:
@@ -328,7 +400,7 @@ class Ghost:
             return
         # Determine target based on mode
         if self.returning_to_base:
-            target_node = nearest_node_from_tile(self.spawn_tile, self.nodes)
+            target_node = self.spawn_tile
         else:
             if self.pacman is not None:
                 p_tile = (int(self.pacman.px // TILE_SIZE), int(self.pacman.py // TILE_SIZE))
@@ -336,7 +408,10 @@ class Ghost:
                 p_tile = (MAP_WIDTH // 2, MAP_HEIGHT // 2)
             target_node = nearest_node_from_tile(p_tile, self.nodes)
         start_node = (tx, ty)
-        path = dijkstra(self.adj, start_node, target_node)
+        if self.returning_to_base:
+            path = dijkstra(self.adj_return, start_node, target_node)
+        else:
+            path = dijkstra(self.adj, start_node, target_node)
         self.path_nodes = path
         # Set the immediate next node as the target (skip start)
         if len(path) >= 2:
@@ -351,6 +426,9 @@ class Ghost:
         if self.at_tile_center():
             self.snap_to_center()
             tx, ty = self.current_tile()
+            # Update last safe tile if walkable
+            if is_walkable(tx, ty):
+                self.last_safe_tile = (tx, ty)
             # Arrived at current target node?
             if self.current_target_node is not None and (tx, ty) == self.current_target_node:
                 # Reached this node; plan toward next or recompute toward Pacman again
@@ -378,8 +456,54 @@ class Ghost:
         if not crossing_tile_boundary or is_walkable(next_tx, next_ty):
             self.px = next_px
             self.py = next_py
+        else:
+            # Blocked by wall when attempting to leave current tile
+            # Snap to center of current tile and choose a new direction
+            self.px = cur_tx * TILE_SIZE + TILE_SIZE // 2
+            self.py = cur_ty * TILE_SIZE + TILE_SIZE // 2
+            self.dx = 0
+            self.dy = 0
+            if self.returning_to_base:
+                ns = self._next_tile_towards((cur_tx, cur_ty), self.spawn_tile)
+                if ns is not None:
+                    self.choose_next_direction_to(ns)
+            else:
+                if (cur_tx, cur_ty) in self.nodes:
+                    self.recompute_path_if_needed()
+                else:
+                    ns = self._next_tile_to_nearest_node((cur_tx, cur_ty))
+                    if ns is not None:
+                        self.choose_next_direction_to(ns)
         # Handle tunnel wrapping like Pacman
         self.handle_tunnel()
+
+        # Guard: if we ended up inside a wall tile (due to speed/overshoot), snap back
+        ctx, cty = self.current_tile()
+        if not is_walkable(ctx, cty):
+            sx, sy = self.last_safe_tile
+            self.px = sx * TILE_SIZE + TILE_SIZE // 2
+            self.py = sy * TILE_SIZE + TILE_SIZE // 2
+            self.dx = 0
+            self.dy = 0
+            # Plan next step depending on mode
+            if self.returning_to_base:
+                # Use return graph from nearest node toward spawn
+                tx, ty = self.current_tile()
+                if (tx, ty) in self.nodes_return:
+                    self.recompute_path_if_needed()
+                else:
+                    ns = self._next_tile_to_nearest_node((tx, ty))
+                    if ns is not None:
+                        self.choose_next_direction_to(ns)
+            else:
+                # Normal chase: toward nearest node to Pacman
+                tx, ty = self.current_tile()
+                if (tx, ty) in self.nodes:
+                    self.recompute_path_if_needed()
+                else:
+                    ns = self._next_tile_to_nearest_node((tx, ty))
+                    if ns is not None:
+                        self.choose_next_direction_to(ns)
 
         # Auto-exit scatter when time expires (unless returning to base)
         if self.scatter_active and not self.returning_to_base:

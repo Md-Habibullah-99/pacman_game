@@ -34,13 +34,13 @@ class LevelSystem:
 		gr = getattr(ghost, 'radius', TILE_SIZE // 2)
 		threshold = (pr + gr) * 0.8
 		if dist_sq <= threshold * threshold:
-			# If ghost is scattering or returning to base, ignore normal collision
+			# First: if ghost is already returning to base, ignore collisions
+			if getattr(ghost, 'returning_to_base', False):
+				return
+			# Next: if ghost is in scatter, take it down once and start return
 			if getattr(ghost, 'scatter_active', False):
 				if hasattr(ghost, 'take_down_and_return_to_base'):
 					ghost.take_down_and_return_to_base()
-				return
-			if getattr(ghost, 'returning_to_base', False):
-				# Do nothing while ghost returns to base
 				return
 			# Normal collision: lose life and reset
 			if self.lives > 0:
