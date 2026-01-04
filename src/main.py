@@ -6,7 +6,7 @@ from ghost import Ghost
 from lavel_system import LevelSystem
 
 # Config variables
-GHOST_SPEED = 2
+GHOST_SPEED = 1.5
 INITIAL_LIVES = 3
 
 # Initialize pygame
