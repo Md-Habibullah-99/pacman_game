@@ -31,6 +31,7 @@ except Exception as e:
     sys.exit(1)
     
 
+
 # Convart STRING TO LIST
 MAP_DATA = [[int(j) for j in i] for i in map01]
 
@@ -48,6 +49,9 @@ pygame.display.set_caption('Pacman')
 # --- Functions ---
 
 def draw_smooth_map():
+    # Count total points
+    TOTAL_POINT = 0
+    
     # --- Color Definitions ---
     WALL_BORDER_COLOR = (0, 0, 255) # Blue (The border color)
     WALL_BODY_COLOR = (216, 216, 230) # Light Blue (The wall interior color)
@@ -93,12 +97,15 @@ def draw_smooth_map():
                 
                 # Now, draw the pills on the black path
                 if tile_value == 2:
+                    TOTAL_POINT+=10
                     PILL_RADIUS = 4
                     pygame.draw.circle(screen, NORMAL_PILL_COLOR, (center_x, center_y), PILL_RADIUS)
                 
                 elif tile_value == 3:
+                    TOTAL_POINT+=50
                     POWER_RADIUS = 8
                     pygame.draw.circle(screen, SPECIAL_PILL_COLOR, (center_x, center_y), POWER_RADIUS)# --- Main Game Loop ---
+    
     return screen
 
 
