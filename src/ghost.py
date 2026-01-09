@@ -148,7 +148,7 @@ def dijkstra(adj, start, goal):
 
 
 class Ghost:
-    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red"):
+    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red", behavior: str = "blinky"):
         self.color = color
         self.pacman = pacman
         self.speed = speed
@@ -163,6 +163,8 @@ class Ghost:
         # Additional config for variants
         self.spawn_values = set(spawn_values) if spawn_values is not None else {5}
         self.sprite_variant = sprite_variant
+        self.behavior = behavior  # 'blinky' for aggressive chase by default
+        self._last_pac_tile = None  # track pacman tile to trigger re-path
 
         # Build graph once
         self.nodes, self.adj = build_graph()
@@ -406,11 +408,7 @@ class Ghost:
         if self.returning_to_base:
             target_node = self.spawn_tile
         else:
-            if self.pacman is not None:
-                p_tile = (int(self.pacman.px // TILE_SIZE), int(self.pacman.py // TILE_SIZE))
-            else:
-                p_tile = (MAP_WIDTH // 2, MAP_HEIGHT // 2)
-            target_node = nearest_node_from_tile(p_tile, self.nodes)
+            target_node = self._select_chase_target_node()
         start_node = (tx, ty)
         if self.returning_to_base:
             path = dijkstra(self.adj_return, start_node, target_node)
@@ -424,6 +422,25 @@ class Ghost:
         else:
             self.current_target_node = None
             self.dx, self.dy = 0, 0
+
+    def _select_chase_target_node(self):
+        # Hook for per-ghost behavior. Default is Blinky's aggressive chase.
+        if self.pacman is not None:
+            p_tile = (int(self.pacman.px // TILE_SIZE), int(self.pacman.py // TILE_SIZE))
+        else:
+            p_tile = (MAP_WIDTH // 2, MAP_HEIGHT // 2)
+        if self.behavior == "pinky":
+            # Ambusher: aim 4 tiles ahead of Pacman's facing direction
+            dx = getattr(self.pacman, 'dx', 0)
+            dy = getattr(self.pacman, 'dy', 0)
+            tx = p_tile[0] + 4 * dx
+            ty = p_tile[1] + 4 * dy
+            # Clamp within bounds; nearest_node will handle walls
+            tx = max(0, min(MAP_WIDTH - 1, tx))
+            ty = max(0, min(MAP_HEIGHT - 1, ty))
+            return nearest_node_from_tile((tx, ty), self.nodes)
+        # For 'blinky' and default, aim at Pacman's current tile (nearest node)
+        return nearest_node_from_tile(p_tile, self.nodes)
 
     def update(self):
         # Mouth/animation not needed for ghost; update path decisions at nodes
