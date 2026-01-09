@@ -148,7 +148,7 @@ def dijkstra(adj, start, goal):
 
 
 class Ghost:
-    def __init__(self, color=(255, 0, 0), pacman=None, speed=2):
+    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red"):
         self.color = color
         self.pacman = pacman
         self.speed = speed
@@ -160,14 +160,18 @@ class Ghost:
         self.scatter_active = False
         self.returning_to_base = False
         self._scatter_until_ms = None
+        # Additional config for variants
+        self.spawn_values = set(spawn_values) if spawn_values is not None else {5}
+        self.sprite_variant = sprite_variant
 
         # Build graph once
         self.nodes, self.adj = build_graph()
 
-        # Load red ghost sprite if available
+        # Load ghost sprite for the selected variant if available
         try:
+            sprite_filename = f"Ghost-{self.sprite_variant}.png"
             sprite_path = os.path.normpath(
-                os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", "Ghost-red.png")
+                os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", sprite_filename)
             )
             img = pygame.image.load(sprite_path).convert_alpha()
             # Scale to a tile size with a tiny padding so it fits corridors
@@ -182,11 +186,11 @@ class Ghost:
             # Fallback: keep drawing a circle if sprite fails to load
             print("Failed to load ghost sprite:", e)
 
-        # Choose a spawn among 5
+        # Choose a spawn among configured spawn values
         spawn_tiles = []
         for y in range(MAP_HEIGHT):
             for x in range(MAP_WIDTH):
-                if MAP_DATA[y][x] in {5}:
+                if MAP_DATA[y][x] in self.spawn_values:
                     spawn_tiles.append((x, y))
         if not spawn_tiles:
             # Fallback: center of map
