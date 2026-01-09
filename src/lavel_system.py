@@ -5,6 +5,7 @@ from maze import TILE_SIZE, screen
 class LevelSystem:
 	def __init__(self, initial_lives: int = 3):
 		self.lives = initial_lives
+		self.game_over = False
 		self.life_icon = None
 		try:
 			sprite_path = os.path.normpath(
@@ -45,9 +46,45 @@ class LevelSystem:
 			# Normal collision: lose life and reset
 			if self.lives > 0:
 				self.lives -= 1
+			# If lives dropped to zero, trigger game over and DO NOT reset positions
+			if self.lives <= 0:
+				self.game_over = True
+				return
+			# Otherwise, reset positions for next life
 			pacman.reset_position()
 			if hasattr(ghost, 'reset_to_spawn'):
 				ghost.reset_to_spawn()
 
 	def get_lives(self) -> int:
 		return self.lives
+
+	def is_game_over(self) -> bool:
+		return self.game_over
+
+	def draw_game_over(self):
+		# Draw a big centered "GAME OVER" overlay
+		if not self.game_over:
+			return
+		# Semi-transparent dark overlay
+		overlay = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+		overlay.fill((0, 0, 0, 160))
+		screen.blit(overlay, (0, 0))
+		# Title font
+		try:
+			if not pygame.font.get_init():
+				pygame.font.init()
+			font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 72)
+		except Exception:
+			font = pygame.font.SysFont(None, 72)
+		# Render text
+		title = font.render("GAME OVER", True, (255, 80, 80))
+		tr = title.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 - 20))
+		screen.blit(title, tr)
+		# Subtext
+		try:
+			sub_font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 28)
+		except Exception:
+			sub_font = pygame.font.SysFont(None, 28)
+		sub = sub_font.render("No lives left", True, (255, 255, 255))
+		sr = sub.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2 + 32))
+		screen.blit(sub, sr)
