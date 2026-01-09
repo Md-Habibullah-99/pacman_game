@@ -20,7 +20,7 @@ pacman = Pacman()
 red_ghost = Ghost(color=(255, 0, 0), pacman=pacman, speed=GHOST_SPEED, spawn_values={5}, sprite_variant="red")
 blue_ghost = Ghost(color=(0, 0, 255), pacman=pacman, speed=GHOST_SPEED, spawn_values={6}, sprite_variant="blue")
 orenge_ghost = Ghost(color=(255, 165, 0), pacman=pacman, speed=GHOST_SPEED, spawn_values={7}, sprite_variant="orenge")
-pink_ghost = Ghost(color=(255, 105, 180), pacman=pacman, speed=GHOST_SPEED, spawn_values={8}, sprite_variant="pink")
+pink_ghost = Ghost(color=(255, 105, 180), pacman=pacman, speed=GHOST_SPEED, spawn_values={8}, sprite_variant="pink", behavior="pinky")
 
 ghosts = [red_ghost, blue_ghost, orenge_ghost, pink_ghost]
 

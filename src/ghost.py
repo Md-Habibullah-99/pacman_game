@@ -444,6 +444,15 @@ class Ghost:
 
     def update(self):
         # Mouth/animation not needed for ghost; update path decisions at nodes
+        # Aggressive re-path for Blinky when Pacman moves tiles
+        if not self.returning_to_base and not self.scatter_active and self.pacman is not None:
+            cur_p_tile = (int(self.pacman.px // TILE_SIZE), int(self.pacman.py // TILE_SIZE))
+            if cur_p_tile != self._last_pac_tile:
+                self._last_pac_tile = cur_p_tile
+                # If at a node, recompute immediately for responsiveness
+                tx_tmp, ty_tmp = self.current_tile()
+                if (tx_tmp, ty_tmp) in self.nodes:
+                    self.recompute_path_if_needed()
         if self.at_tile_center():
             self.snap_to_center()
             tx, ty = self.current_tile()
