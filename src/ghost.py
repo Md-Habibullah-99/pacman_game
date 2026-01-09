@@ -167,6 +167,8 @@ class Ghost:
         self._last_pac_tile = None  # track pacman tile to trigger re-path
         # Optional partner ghost reference (used by Inky behavior)
         self.partner = partner
+        # Clyde home corner cache
+        self.home_corner_node = None
 
         # Build graph once
         self.nodes, self.adj = build_graph()
@@ -455,11 +457,34 @@ class Ghost:
             target_x = max(0, min(MAP_WIDTH - 1, target_x))
             target_y = max(0, min(MAP_HEIGHT - 1, target_y))
             return nearest_node_from_tile((target_x, target_y), self.nodes)
+        if self.behavior == "clyde":
+            # Coward: if distance to Pacman <= threshold, retreat to home corner; else chase like blinky
+            tx, ty = self.current_tile()
+            px, py = p_tile
+            dx = tx - px
+            dy = ty - py
+            # Use Euclidean tile distance; threshold per prompt (6 tiles)
+            dist = math.sqrt(dx * dx + dy * dy)
+            if dist <= 6:
+                # Retreat to home corner node
+                target_node = self._get_clyde_home_corner_node()
+                return target_node
+            # Otherwise chase
+            return nearest_node_from_tile(p_tile, self.nodes)
         # For 'blinky' and default, aim at Pacman's current tile (nearest node)
         return nearest_node_from_tile(p_tile, self.nodes)
 
     def set_partner(self, ghost):
         self.partner = ghost
+
+    def _get_clyde_home_corner_node(self):
+        # Determine a home corner for Clyde (bottom-left typical). Cache it.
+        if self.home_corner_node is not None:
+            return self.home_corner_node
+        # Pick a corner tile near bottom-left inside the maze bounds
+        corner_tile = (1, max(0, MAP_HEIGHT - 2))
+        self.home_corner_node = nearest_node_from_tile(corner_tile, self.nodes)
+        return self.home_corner_node
 
     def update(self):
         # Mouth/animation not needed for ghost; update path decisions at nodes
