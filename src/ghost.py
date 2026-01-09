@@ -148,7 +148,7 @@ def dijkstra(adj, start, goal):
 
 
 class Ghost:
-    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red", behavior: str = "blinky"):
+    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red", behavior: str = "blinky", partner=None):
         self.color = color
         self.pacman = pacman
         self.speed = speed
@@ -165,6 +165,8 @@ class Ghost:
         self.sprite_variant = sprite_variant
         self.behavior = behavior  # 'blinky' for aggressive chase by default
         self._last_pac_tile = None  # track pacman tile to trigger re-path
+        # Optional partner ghost reference (used by Inky behavior)
+        self.partner = partner
 
         # Build graph once
         self.nodes, self.adj = build_graph()
@@ -439,8 +441,25 @@ class Ghost:
             tx = max(0, min(MAP_WIDTH - 1, tx))
             ty = max(0, min(MAP_HEIGHT - 1, ty))
             return nearest_node_from_tile((tx, ty), self.nodes)
+        if self.behavior == "inky" and self.partner is not None:
+            # Flanker: compute a point 2 tiles ahead of Pacman, then vector from Blinky to that point and double it
+            dx = getattr(self.pacman, 'dx', 0)
+            dy = getattr(self.pacman, 'dy', 0)
+            ahead_x = p_tile[0] + 2 * dx
+            ahead_y = p_tile[1] + 2 * dy
+            ahead_x = max(0, min(MAP_WIDTH - 1, ahead_x))
+            ahead_y = max(0, min(MAP_HEIGHT - 1, ahead_y))
+            b_tx, b_ty = self.partner.current_tile()
+            target_x = 2 * ahead_x - b_tx
+            target_y = 2 * ahead_y - b_ty
+            target_x = max(0, min(MAP_WIDTH - 1, target_x))
+            target_y = max(0, min(MAP_HEIGHT - 1, target_y))
+            return nearest_node_from_tile((target_x, target_y), self.nodes)
         # For 'blinky' and default, aim at Pacman's current tile (nearest node)
         return nearest_node_from_tile(p_tile, self.nodes)
+
+    def set_partner(self, ghost):
+        self.partner = ghost
 
     def update(self):
         # Mouth/animation not needed for ghost; update path decisions at nodes

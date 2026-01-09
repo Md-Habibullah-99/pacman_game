@@ -6,7 +6,7 @@ from ghost import Ghost
 from lavel_system import LevelSystem
 
 # Config variables
-GHOST_SPEED = 1.5
+GHOST_SPEED = 1.1
 INITIAL_LIVES = 3
 
 # Initialize pygame
@@ -17,8 +17,8 @@ clock = pygame.time.Clock()
 pacman = Pacman()
 
 # Create Ghosts (all follow same algorithm initially)
-red_ghost = Ghost(color=(255, 0, 0), pacman=pacman, speed=GHOST_SPEED, spawn_values={5}, sprite_variant="red")
-blue_ghost = Ghost(color=(0, 0, 255), pacman=pacman, speed=GHOST_SPEED, spawn_values={6}, sprite_variant="blue")
+red_ghost = Ghost(color=(255, 0, 0), pacman=pacman, speed=GHOST_SPEED, spawn_values={5}, sprite_variant="red", behavior="blinky")
+blue_ghost = Ghost(color=(0, 0, 255), pacman=pacman, speed=GHOST_SPEED, spawn_values={6}, sprite_variant="blue", behavior="inky", partner=red_ghost)
 orenge_ghost = Ghost(color=(255, 165, 0), pacman=pacman, speed=GHOST_SPEED, spawn_values={7}, sprite_variant="orenge")
 pink_ghost = Ghost(color=(255, 105, 180), pacman=pacman, speed=GHOST_SPEED, spawn_values={8}, sprite_variant="pink", behavior="pinky")
 
