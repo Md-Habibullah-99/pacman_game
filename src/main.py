@@ -6,8 +6,9 @@ from ghost import Ghost
 from lavel_system import LevelSystem
 
 # Config variables
+# Increase ghost speed slightly to ensure visible movement
 GHOST_SPEED = 1.1
-INITIAL_LIVES = 3
+INITIAL_LIVES = 8
 
 # Initialize pygame
 pygame.init()
@@ -62,6 +63,9 @@ while True:
                     if hasattr(gg, 'reset_to_spawn'):
                         gg.reset_to_spawn()
                 break
+
+        # After movement/collisions, check level completion and handle restart/speed-up
+        level.check_level_completion(pacman, ghosts)
     
     # Draw everything
     draw_smooth_map()

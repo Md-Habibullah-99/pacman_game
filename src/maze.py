@@ -34,6 +34,8 @@ except Exception as e:
 
 # Convart STRING TO LIST
 MAP_DATA = [[int(j) for j in i] for i in map01]
+# Keep an original copy to allow level resets without breaking imports
+ORIGINAL_MAP_DATA = [row.copy() for row in MAP_DATA]
 
 MAP_WIDTH = len(MAP_DATA[0])
 MAP_HEIGHT = len(MAP_DATA)
@@ -107,5 +109,16 @@ def draw_smooth_map():
                     pygame.draw.circle(screen, SPECIAL_PILL_COLOR, (center_x, center_y), POWER_RADIUS)# --- Main Game Loop ---
     
     return screen
+
+def reset_maze():
+    """Reset MAP_DATA to the original layout in-place so imports stay valid."""
+    global MAP_DATA, ORIGINAL_MAP_DATA
+    height = len(MAP_DATA)
+    width = len(MAP_DATA[0]) if height > 0 else 0
+    for y in range(height):
+        # Ensure row length matches
+        for x in range(width):
+            MAP_DATA[y][x] = ORIGINAL_MAP_DATA[y][x]
+    # No return value needed
 
 
