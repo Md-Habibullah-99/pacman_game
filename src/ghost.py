@@ -226,6 +226,28 @@ class Ghost:
         # If spawn tile is not a node, plan an initial step toward nearest node
         self._plan_move_from_non_node()
 
+        # Ensure an initial movement direction is chosen even if spawn is a node
+        if self.dx == 0 and self.dy == 0:
+            stx, sty = self.spawn_tile
+            if (stx, sty) in self.nodes:
+                # Compute an initial path toward the chase target and take the first step
+                target_node = self._select_chase_target_node()
+                path = dijkstra(self.adj, (stx, sty), target_node)
+                if len(path) >= 2:
+                    self.current_target_node = path[1]
+                    self.choose_next_direction_to(self.current_target_node)
+                else:
+                    # Fallback: step toward raw target tile
+                    step = self._next_tile_towards((stx, sty), self._select_target_tile())
+                    if step is not None:
+                        self.choose_next_direction_to(step)
+                    else:
+                        # Final fallback: pick any walkable neighbor toward target
+                        self._choose_any_walkable_direction(self._select_target_tile())
+            else:
+                # Spawn isn't a node and planning failed; pick any walkable neighbor
+                self._choose_any_walkable_direction(self._select_target_tile())
+
     def enter_scatter_mode(self):
         # Activate scatter for 5–8 seconds
         self.scatter_active = True
