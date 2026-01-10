@@ -1,12 +1,14 @@
 import pygame
 import os
-from maze import TILE_SIZE, screen
+from maze import TILE_SIZE, screen, MAP_DATA, reset_maze
 
 class LevelSystem:
 	def __init__(self, initial_lives: int = 3):
 		self.lives = initial_lives
 		self.game_over = False
+		self.level = 1
 		self.life_icon = None
+		self._level_font = None
 		try:
 			sprite_path = os.path.normpath(
 				os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", "pacman.png")
@@ -26,6 +28,46 @@ class LevelSystem:
 			rect = self.life_icon.get_rect()
 			rect.topright = (screen_w - i * spacing, 0)
 			screen.blit(self.life_icon, rect)
+
+	def draw_level_title(self):
+		"""Draw the current level at top-left around (120, 0)."""
+		# Initialize font lazily
+		if self._level_font is None:
+			try:
+				if not pygame.font.get_init():
+					pygame.font.init()
+				self._level_font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 22)
+			except Exception:
+				self._level_font = pygame.font.SysFont(None, 22)
+		label = f"Level: {self.level}"
+		color = (255, 255, 255)
+		surf = self._level_font.render(label, True, color)
+		screen.blit(surf, (120, 0))
+
+	def check_level_completion(self, pacman, ghosts):
+		"""If all pellets are eaten, advance level, reset maze, and speed up ghosts."""
+		if self.game_over:
+			return
+		# Detect remaining pellets (2 or 3) in the current MAP_DATA
+		remaining = 0
+		for row in MAP_DATA:
+			for v in row:
+				if v == 2 or v == 3:
+					remaining += 1
+		if remaining == 0:
+			# Advance level
+			self.level += 1
+			# Reset maze to original pellet layout
+			reset_maze()
+			# Reset Pacman position but keep score and lives
+			pacman.reset_position()
+			# Increase ghost speed by 0.2 and reset them to spawn
+			for g in ghosts:
+				if hasattr(g, 'normal_speed'):
+					g.normal_speed = g.normal_speed + 0.2
+					g.speed = g.normal_speed
+				if hasattr(g, 'reset_to_spawn'):
+					g.reset_to_spawn()
 
 	def check_collision_and_reset(self, pacman, ghost):
 		dx = pacman.px - ghost.px
