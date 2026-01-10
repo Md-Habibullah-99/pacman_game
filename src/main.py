@@ -73,6 +73,8 @@ while True:
     for g in ghosts:
         g.draw()
     level.draw_lives()
+    # Draw level title at (120, 0)
+    level.draw_level_title()
     # If game over, draw overlay message on top
     level.draw_game_over()
     

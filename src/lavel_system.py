@@ -8,6 +8,7 @@ class LevelSystem:
 		self.game_over = False
 		self.level = 1
 		self.life_icon = None
+		self._level_font = None
 		try:
 			sprite_path = os.path.normpath(
 				os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", "pacman.png")
@@ -27,6 +28,21 @@ class LevelSystem:
 			rect = self.life_icon.get_rect()
 			rect.topright = (screen_w - i * spacing, 0)
 			screen.blit(self.life_icon, rect)
+
+	def draw_level_title(self):
+		"""Draw the current level at top-left around (120, 0)."""
+		# Initialize font lazily
+		if self._level_font is None:
+			try:
+				if not pygame.font.get_init():
+					pygame.font.init()
+				self._level_font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 22)
+			except Exception:
+				self._level_font = pygame.font.SysFont(None, 22)
+		label = f"Level: {self.level}"
+		color = (255, 255, 255)
+		surf = self._level_font.render(label, True, color)
+		screen.blit(surf, (120, 0))
 
 	def check_level_completion(self, pacman, ghosts):
 		"""If all pellets are eaten, advance level, reset maze, and speed up ghosts."""
