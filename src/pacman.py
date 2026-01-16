@@ -12,11 +12,7 @@ class Pacman:
     def __init__(self):
         # Find Pacman's starting position (tile with value 9 in maze)
         self.start_pos = self.find_start_position()
-        # Store the original spawn position to reuse after lives lost
-        self.original_spawn_pos = self.start_pos
-        # Initialize position without calling reset_position to avoid double-searching
-        self.px = self.start_pos[0] * TILE_SIZE + TILE_SIZE // 2
-        self.py = self.start_pos[1] * TILE_SIZE + TILE_SIZE // 2
+        self.reset_position()
         
         # Pallet count variable
         self.pallet_count = 0
@@ -48,47 +44,22 @@ class Pacman:
 
     def find_start_position(self):
         """Find Pacman's starting position (tile with value 9)"""
-        # First try to find the marker (9)
         for y in range(MAP_HEIGHT):
             for x in range(MAP_WIDTH):
                 if MAP_DATA[y][x] == 9:  # 9 indicates Pacman starting position
-                    # Clear the starting marker only once
+                    # Clear the starting marker
                     MAP_DATA[y][x] = 0
                     return x, y
         
-        # If no marker found, use the stored spawn position (in case reset_position is called)
-        if hasattr(self, 'original_spawn_pos') and self.original_spawn_pos:
-            return self.original_spawn_pos
-        
-        # Fallback: search for first empty walkable tile (avoid walls and special tiles)
-        print("Warning: Pacman start position (9) not found, searching for walkable tile")
-        for y in range(MAP_HEIGHT):
-            for x in range(MAP_WIDTH):
-                # Prefer empty tiles but also accept pellet tiles (2, 3)
-                if MAP_DATA[y][x] in [0, 2, 3]:
-                    return x, y
-        # Last resort fallback
+        # Fallback if no 9 found
+        print("Warning: Pacman start position (9) not found, using default")
         return 9, 1
 
     def reset_position(self):
         """Reset Pacman to starting position"""
-        # Find starting position
-        self.start_pos = self.find_start_position()
-    
-        # If we found a 9 marker, clear it (but only once per game session)
-        if not hasattr(self, '_marker_cleared'):
-            self._marker_cleared = False
-    
-        if not self._marker_cleared:
-            x, y = self.start_pos
-            if 0 <= x < MAP_WIDTH and 0 <= y < MAP_HEIGHT:
-                if MAP_DATA[y][x] == 9:
-                    MAP_DATA[y][x] = 0
-                    self._marker_cleared = True
-    
         self.px = self.start_pos[0] * TILE_SIZE + TILE_SIZE // 2
         self.py = self.start_pos[1] * TILE_SIZE + TILE_SIZE // 2
-    
+        
         # Reset movement
         self.dx = 0
         self.dy = 0
