@@ -148,7 +148,7 @@ def dijkstra(adj, start, goal):
 
 
 class Ghost:
-    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red", behavior: str = "blinky", partner=None, sound_callback=None):
+    def __init__(self, color=(255, 0, 0), pacman=None, speed=2, spawn_values=None, sprite_variant: str = "red", behavior: str = "blinky", partner=None):
         self.color = color
         self.pacman = pacman
         self.speed = speed
@@ -160,7 +160,6 @@ class Ghost:
         self.scatter_active = False
         self.returning_to_base = False
         self._scatter_until_ms = None
-        self.sound_callback = sound_callback  # Callback for playing sounds
         # Additional config for variants
         self.spawn_values = set(spawn_values) if spawn_values is not None else {5}
         self.sprite_variant = sprite_variant
@@ -266,12 +265,6 @@ class Ghost:
         self.speed = self.return_speed
         # Ensure motion toward the graph
         self._plan_move_from_non_node()
-        # Play the ghost eating sound if callback is available
-        if self.sound_callback:
-            try:
-                self.sound_callback("eat_ghost")
-            except:
-                pass
 
     def reset_to_spawn(self):
         self.px = self.spawn_tile[0] * TILE_SIZE + TILE_SIZE // 2
