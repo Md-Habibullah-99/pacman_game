@@ -278,6 +278,24 @@ class Ghost:
         self._plan_move_from_non_node()
         self.last_safe_tile = self.spawn_tile
 
+    def on_map_changed(self):
+        """Rebuild pathfinding graph and spawn for a new maze layout."""
+        # Rebuild nodes/graph for current MAP_DATA
+        self.nodes, self.adj = build_graph()
+        # Recompute spawn tile from current MAP_DATA using configured spawn_values
+        spawn_tiles = []
+        for y in range(MAP_HEIGHT):
+            for x in range(MAP_WIDTH):
+                if MAP_DATA[y][x] in self.spawn_values:
+                    spawn_tiles.append((x, y))
+        if spawn_tiles:
+            self.spawn_tile = random.choice(spawn_tiles)
+        else:
+            self.spawn_tile = (MAP_WIDTH // 2, MAP_HEIGHT // 2)
+        # Rebuild return graph and reset
+        self.nodes_return, self.adj_return = self._build_return_graph()
+        self.reset_to_spawn()
+
     def current_tile(self):
         return int(self.px // TILE_SIZE), int(self.py // TILE_SIZE)
 
