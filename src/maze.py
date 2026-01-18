@@ -2,6 +2,7 @@ import pygame
 import json
 import os
 import sys
+from typing import List
 
 # --- Configuration ---
 TILE_SIZE = 30
@@ -16,7 +17,8 @@ try:
     )
     with open(maze_file_path, "r", encoding="utf-8") as f:
         y = json.load(f)
-    map01 = y["4"]["map"]
+    # Default start with Maze 01
+    map01 = y["1"]["map"]
 except FileNotFoundError as e:
     print(f"Map file not found: {e.filename}")
     sys.exit(1)
@@ -120,5 +122,59 @@ def reset_maze():
         for x in range(width):
             MAP_DATA[y][x] = ORIGINAL_MAP_DATA[y][x]
     # No return value needed
+
+
+# --- Maze selection helpers ---
+
+def _convert_map_str_list(str_rows: List[str]) -> List[List[int]]:
+    return [[int(ch) for ch in row] for row in str_rows]
+
+def get_same_size_maze_keys() -> List[str]:
+    """Return maze keys whose map dimensions match the current MAP dimensions."""
+    try:
+        keys = []
+        cur_h = len(MAP_DATA)
+        cur_w = len(MAP_DATA[0]) if cur_h > 0 else 0
+        for key, obj in y.items():
+            str_rows = obj.get("map")
+            if not isinstance(str_rows, list):
+                continue
+            h = len(str_rows)
+            w = len(str_rows[0]) if h > 0 else 0
+            if h == cur_h and w == cur_w:
+                keys.append(str(key))
+        return sorted(keys, key=lambda k: int(k))
+    except Exception:
+        return ["1"]
+
+def load_maze_by_key(key: str) -> bool:
+    """Load maze by key if dimensions match current MAP size.
+
+    Returns True on success, False if key missing or size mismatch.
+    Also resets ORIGINAL_MAP_DATA to the newly loaded maze for level resets.
+    """
+    global MAP_DATA, ORIGINAL_MAP_DATA
+    try:
+        obj = y[str(int(key))]
+        str_rows = obj.get("map")
+        if not isinstance(str_rows, list):
+            return False
+        new_map = _convert_map_str_list(str_rows)
+        # Only allow switch if size matches current SCREEN/MAP to avoid cross-module dimension issues
+        if len(new_map) != len(MAP_DATA) or len(new_map[0]) != len(MAP_DATA[0]):
+            # Size mismatch: do not switch to avoid breaking imports
+            return False
+        # Replace MAP_DATA in-place to preserve imported reference
+        height = len(MAP_DATA)
+        width = len(MAP_DATA[0]) if height > 0 else 0
+        for y_idx in range(height):
+            for x_idx in range(width):
+                MAP_DATA[y_idx][x_idx] = new_map[y_idx][x_idx]
+        # Update ORIGINAL to this maze so reset_maze restores this layout during the level
+        ORIGINAL_MAP_DATA = [row.copy() for row in MAP_DATA]
+        return True
+    except Exception as e:
+        print("Failed to load maze key:", key, e)
+        return False
 
 

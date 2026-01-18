@@ -1,12 +1,19 @@
 import pygame
 import os
-from maze import TILE_SIZE, screen, MAP_DATA, reset_maze
+import random
+from maze import TILE_SIZE, screen, MAP_DATA, reset_maze, load_maze_by_key, get_same_size_maze_keys
 
 class LevelSystem:
 	def __init__(self, initial_lives: int = 3):
 		self.lives = initial_lives
 		self.game_over = False
 		self.level = 1
+		# Track mazes used this session; start with '1' for first level
+		try:
+			self._same_size_keys = get_same_size_maze_keys()
+		except Exception:
+			self._same_size_keys = ["1"]
+		self._used_maze_keys = ["1"]
 		self.life_icon = None
 		self._level_font = None
 		try:
@@ -57,17 +64,48 @@ class LevelSystem:
 		if remaining == 0:
 			# Advance level
 			self.level += 1
-			# Reset maze to original pellet layout
-			reset_maze()
-			# Reset Pacman position but keep score and lives
-			pacman.reset_position()
-			# Increase ghost speed by 0.2 and reset them to spawn
-			for g in ghosts:
-				if hasattr(g, 'normal_speed'):
-					g.normal_speed = g.normal_speed + 0.2
-					g.speed = g.normal_speed
-				if hasattr(g, 'reset_to_spawn'):
-					g.reset_to_spawn()
+			# Select next maze key: first level always '1'; later random among same-size keys
+			next_key = None
+			if self.level == 2:
+				# After finishing level 1, pick any same-size maze excluding '1' if available
+				candidates = [k for k in self._same_size_keys if k != "1"] or self._same_size_keys
+				next_key = random.choice(candidates)
+			else:
+				# Avoid immediate repeats; use pool of same-size keys not yet used
+				remaining_keys = [k for k in self._same_size_keys if k not in self._used_maze_keys]
+				if not remaining_keys:
+					# Reset pool except keep last used to avoid direct repeat
+					remaining_keys = [k for k in self._same_size_keys if k != self._used_maze_keys[-1]] or self._same_size_keys
+				next_key = random.choice(remaining_keys)
+			if next_key is None:
+				next_key = "1"
+			# Attempt to load the selected maze; fallback to simple reset on failure
+			switched = load_maze_by_key(next_key)
+			if switched:
+				self._used_maze_keys.append(next_key)
+				# Pacman: re-discover start on new maze and reset position without clearing score
+				if hasattr(pacman, 'find_start_position'):
+					pacman.start_pos = pacman.find_start_position()
+				pacman.reset_position()
+				# Ghosts: rebuild graphs/spawn for new layout and slightly increase speed
+				for g in ghosts:
+					if hasattr(g, 'normal_speed'):
+						g.normal_speed = g.normal_speed + 0.2
+						g.speed = g.normal_speed
+					if hasattr(g, 'on_map_changed'):
+						g.on_map_changed()
+					elif hasattr(g, 'reset_to_spawn'):
+						g.reset_to_spawn()
+			else:
+				# Fallback: keep same maze, just reset pellets and positions
+				reset_maze()
+				pacman.reset_position()
+				for g in ghosts:
+					if hasattr(g, 'normal_speed'):
+						g.normal_speed = g.normal_speed + 0.2
+						g.speed = g.normal_speed
+					if hasattr(g, 'reset_to_spawn'):
+						g.reset_to_spawn()
 
 	def check_collision_and_reset(self, pacman, ghost):
 		dx = pacman.px - ghost.px
