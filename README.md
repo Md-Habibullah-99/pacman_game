@@ -1,16 +1,23 @@
-# 🎮 Pacman Game
+# Pacman Game
 
-A classic Pac-Man game implementation in Python with intelligent ghost AI, level system, and engaging gameplay mechanics.
+A sophisticated implementation of the classic Pac-Man arcade game, developed in Python with advanced ghost AI algorithms, progressive level system, and comprehensive game mechanics.
 
-## 📋 Table of Contents
+## Overview
+
+This project demonstrates game development principles including collision detection, pathfinding algorithms, state management, and artificial intelligence. The implementation features multiple AI-driven ghosts with distinct behavioral patterns, a scalable level architecture, and a user-friendly interface.
+
+## Table of Contents
 
 - [Features](#features)
+- [Technical Specifications](#technical-specifications)
 - [Project Structure](#project-structure)
+- [Requirements](#requirements)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Game Controls](#game-controls)
-- [Game Features](#game-features)
+- [Game Architecture](#game-architecture)
 - [Contributors](#contributors)
+- [License](#license)
 
 ## ✨ Features
 
@@ -53,7 +60,7 @@ pacman_game/
 ## 🚀 Installation
 
 ### Prerequisites
-- Python 3.7 or higher
+- Python 3.13 or higher
 - pip (Python package manager)
 
 ### Setup Steps
@@ -66,12 +73,17 @@ cd pacman_game
 
 2. Install required dependencies:
 ```bash
-pip install pygame
+pip install pygame-ce
 ```
 
 3. Run the game:
 ```bash
 python src/main.py
+```
+or navigate to dist folder and run the executable:
+```
+dist/pacman.exe  # For Windows
+dist/pacman      # For Linux/Mac
 ```
 
 ## 🎮 Usage
