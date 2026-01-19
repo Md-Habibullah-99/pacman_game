@@ -2,6 +2,7 @@ import pygame
 import os
 import random
 from maze import TILE_SIZE, screen, MAP_DATA, reset_maze, load_maze_by_key, get_same_size_maze_keys
+from paths import resource_path
 
 class LevelSystem:
 	def __init__(self, initial_lives: int = 3):
@@ -17,9 +18,7 @@ class LevelSystem:
 		self.life_icon = None
 		self._level_font = None
 		try:
-			sprite_path = os.path.normpath(
-				os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", "pacman.png")
-			)
+			sprite_path = resource_path("assets", "sprites", "pacman.png")
 			img = pygame.image.load(sprite_path).convert_alpha()
 			size = max(16, TILE_SIZE - 6)
 			self.life_icon = pygame.transform.smoothscale(img, (size, size))
@@ -43,7 +42,8 @@ class LevelSystem:
 			try:
 				if not pygame.font.get_init():
 					pygame.font.init()
-				self._level_font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 22)
+				font_path = resource_path("src", "fonts", "CascadiaCode-VariableFont_wght.ttf")
+				self._level_font = pygame.font.Font(font_path, 22)
 			except Exception:
 				self._level_font = pygame.font.SysFont(None, 22)
 		label = f"Level: {self.level}"
@@ -153,7 +153,8 @@ class LevelSystem:
 		try:
 			if not pygame.font.get_init():
 				pygame.font.init()
-			font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 72)
+			font_path = resource_path("src", "fonts", "CascadiaCode-VariableFont_wght.ttf")
+			font = pygame.font.Font(font_path, 72)
 		except Exception:
 			font = pygame.font.SysFont(None, 72)
 		# Render text
@@ -162,7 +163,7 @@ class LevelSystem:
 		screen.blit(title, tr)
 		# Subtext
 		try:
-			sub_font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 28)
+			sub_font = pygame.font.Font(resource_path("src", "fonts", "CascadiaCode-VariableFont_wght.ttf"), 28)
 		except Exception:
 			sub_font = pygame.font.SysFont(None, 28)
 		sub = sub_font.render("No lives left", True, (255, 255, 255))

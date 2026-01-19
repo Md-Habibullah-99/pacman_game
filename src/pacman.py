@@ -2,6 +2,7 @@ import pygame
 import time
 import math
 from maze import MAP_DATA, TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, screen
+from paths import resource_path
 
 # Defer font/text creation until pygame font is initialized
 font = None
@@ -230,7 +231,8 @@ class Pacman:
             try:
                 if not pygame.font.get_init():
                     pygame.font.init()
-                font = pygame.font.Font("src/fonts/CascadiaCode-VariableFont_wght.ttf", 22)
+                font_path = resource_path("src", "fonts", "CascadiaCode-VariableFont_wght.ttf")
+                font = pygame.font.Font(font_path, 22)
             except Exception as e:
                 print("Font init failed:", e)
         # Calculate mouth opening
