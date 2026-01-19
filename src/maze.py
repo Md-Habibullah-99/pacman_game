@@ -4,6 +4,8 @@ import os
 import sys
 from typing import List
 
+from paths import resource_path
+
 # --- Configuration ---
 TILE_SIZE = 30
 
@@ -12,9 +14,7 @@ TILE_SIZE = 30
 
 # Get the directory of the current file and construct the path to maze.json
 try:
-    maze_file_path = os.path.normpath(
-        os.path.join(os.path.dirname(__file__), "..", "data", "maze.json")
-    )
+    maze_file_path = resource_path("data", "maze.json")
     with open(maze_file_path, "r", encoding="utf-8") as f:
         y = json.load(f)
     # Default start with Maze 01

@@ -4,6 +4,8 @@ import json
 import sys
 import os
 
+from paths import resource_path
+
 # --- Constants ---
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -145,25 +147,32 @@ class Menu:
         self.message_time = 0
         
         # Determine paths to JSON files
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        data_dir = os.path.join(current_dir, "data")
-        
+        # Use a writable user data directory so scores persist even in frozen builds
+        xdg_data_home = os.environ.get("XDG_DATA_HOME")
+        default_data_root = os.path.join(os.path.expanduser("~"), ".local", "share")
+        data_root = os.path.expanduser(xdg_data_home) if xdg_data_home else default_data_root
+        data_dir = os.path.join(data_root, "pacman_game")
+
         # Create data directory if it doesn't exist
         if not os.path.exists(data_dir):
             try:
-                os.makedirs(data_dir)
+                os.makedirs(data_dir, exist_ok=True)
                 print(f"Created data directory: {data_dir}")
             except Exception as e:
                 print(f"Error creating data directory: {e}")
-        
+
         self.user_file = os.path.join(data_dir, "user.json")
         self.score_file = os.path.join(data_dir, "score.json")
+
+        # Paths to bundled default data (read-only)
+        self.default_user_file = resource_path("src", "data", "user.json")
+        self.default_score_file = resource_path("src", "data", "score.json")
         
         print(f"User file: {self.user_file}")
         print(f"Score file: {self.score_file}")
         
-        self.users = self.load_json(self.user_file)
-        self.scores = self.load_json(self.score_file)
+        self.users = self.load_json(self.user_file, self.default_user_file)
+        self.scores = self.load_json(self.score_file, self.default_score_file)
         
         print(f"Loaded {len(self.users)} users")
         print(f"Loaded {len(self.scores)} scores")
@@ -174,18 +183,25 @@ class Menu:
         # Initialize UI elements
         self.init_ui()
 
-    def load_json(self, filepath):
-        """Load JSON data from file"""
+    def load_json(self, filepath, default_path=None):
+        """Load JSON data from file, seeding from a bundled default if present."""
         try:
             if os.path.exists(filepath):
                 with open(filepath, 'r') as f:
                     data = json.load(f)
                     return data
             else:
-                print(f"File {filepath} doesn't exist, creating empty")
+                seed_data = {}
+                if default_path and os.path.exists(default_path):
+                    try:
+                        with open(default_path, 'r') as default_f:
+                            seed_data = json.load(default_f)
+                    except Exception as e:
+                        print(f"Failed to read default data from {default_path}: {e}")
+                print(f"File {filepath} doesn't exist, creating from defaults")
                 with open(filepath, 'w') as f:
-                    json.dump({}, f)
-                return {}
+                    json.dump(seed_data, f)
+                return seed_data
         except Exception as e:
             print(f"Error loading {filepath}: {e}")
             return {}

@@ -4,6 +4,7 @@ import math
 import heapq
 import os
 from maze import MAP_DATA, MAP_WIDTH, MAP_HEIGHT, TILE_SIZE, screen
+from paths import resource_path
 
 WALL = 1
 WALKABLE = {0, 2, 3, 5, 6, 7, 8, 9}
@@ -180,16 +181,12 @@ class Ghost:
         # Load ghost sprite for the selected variant if available
         try:
             sprite_filename = f"Ghost-{self.sprite_variant}.png"
-            sprite_path = os.path.normpath(
-                os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", sprite_filename)
-            )
+            sprite_path = resource_path("assets", "sprites", sprite_filename)
             img = pygame.image.load(sprite_path).convert_alpha()
             # Scale to a tile size with a tiny padding so it fits corridors
             size = max(1, TILE_SIZE - 2)
             self.image = pygame.transform.smoothscale(img, (size, size))
-            scatter_path = os.path.normpath(
-                os.path.join(os.path.dirname(__file__), "..", "assets", "sprites", "scater_mode.png")
-            )
+            scatter_path = resource_path("assets", "sprites", "scater_mode.png")
             s_img = pygame.image.load(scatter_path).convert_alpha()
             self.scatter_image = pygame.transform.smoothscale(s_img, (size, size))
         except Exception as e:
