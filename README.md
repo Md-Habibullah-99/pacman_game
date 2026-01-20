@@ -13,6 +13,7 @@ This project demonstrates game development principles including collision detect
 - [Project Structure](#project-structure)
 - [Requirements](#requirements)
 - [Installation](#installation)
+- [Build & Release](#build--release)
 - [Usage](#usage)
 - [Game Controls](#game-controls)
 - [Game Architecture](#game-architecture)
@@ -43,9 +44,9 @@ pacman_game/
 │   ├── ghost.py             # Ghost AI and behavior logic
 │   ├── maze.py              # Maze rendering and collision detection
 │   ├── menu.py              # Main menu interface
-│   ├── lavel_system.py       # Level and lives management
+│   ├── lavel_system.py      # Level and lives management
 │   ├── paths.py             # Pathfinding utilities
-│   └── data/
+│   └── info/
 │       ├── score.json       # Player scores
 │       └── user.json        # User data
 ├── data/
@@ -60,23 +61,23 @@ pacman_game/
 ## 🚀 Installation
 
 ### Prerequisites
-- Python 3.13 or higher
+- Python 3.10+ (tested on CPython)
 - pip (Python package manager)
 
 ### Setup Steps
 
-1. Clone the repository:
+1. Clone the repository (or download the sources):
 ```bash
 git clone https://github.com/Md-Habibullah-99/pacman_game.git
 cd pacman_game
 ```
 
-2. Install required dependencies:
+2. Install dependencies:
 ```bash
-pip install pygame-ce
+pip install -r requirements.txt
 ```
 
-3. Run the game:
+3. Run the game from source:
 ```bash
 python src/main.py
 ```
@@ -85,6 +86,30 @@ or navigate to dist folder and run the executable:
 dist/pacman.exe  # For Windows
 dist/pacman      # For Linux/Mac
 ```
+
+## Build & Release
+
+Create platform-native binaries with PyInstaller. Build on the target OS (Linux build on Linux, Windows build on Windows).
+
+### Linux binary
+```bash
+pip install -r requirements.txt
+pyinstaller pacman.spec
+# output: dist/pacman
+```
+
+### Windows .exe
+```bash
+pip install -r requirements.txt
+pyinstaller pacman_win.spec
+# output: dist/pacman.exe
+```
+
+### Release checklist
+- Build on each platform; use the corresponding spec file.
+- Copy the contents of `dist/` per platform and zip them (e.g., `pacman-linux.zip`, `pacman-windows.zip`).
+- You can remove previous outputs before rebuilding: `rm -rf build dist`.
+- Keep `requirements.txt` and `.spec` files in the repo; they document how to reproduce the builds.
 
 ## 🎮 Usage
 
@@ -95,6 +120,8 @@ python src/main.py
 ```
 
 The game will launch with a menu where you can start a new game or view options.
+
+To run a packaged build after using PyInstaller, execute the binary inside `dist/` for your platform.
 
 ## ⌨️ Game Controls
 

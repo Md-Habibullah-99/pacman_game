@@ -1,0 +1,5 @@
+# Runtime
+pygame>=2.5.0
+
+# Build (packaging executable)
+pyinstaller>=6.3

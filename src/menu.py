@@ -165,8 +165,8 @@ class Menu:
         self.score_file = os.path.join(data_dir, "score.json")
 
         # Paths to bundled default data (read-only)
-        self.default_user_file = resource_path("src", "data", "user.json")
-        self.default_score_file = resource_path("src", "data", "score.json")
+        self.default_user_file = resource_path("src", "info", "user.json")
+        self.default_score_file = resource_path("src", "info", "score.json")
         
         print(f"User file: {self.user_file}")
         print(f"Score file: {self.score_file}")
